@@ -12,6 +12,100 @@
 	.pager a.active {color:#fe8e23;}
 </style>
 
+<? if(!array_search("Администратор", $conf['user']['gid'])): mpre("Раздел предназначен только администраторам") ?>
+<? elseif(!($themes_index = get($conf, 'themes', 'index')) &&0):// mpre("Хост сайта не найден") ?>
+<? elseif(($canonical = get($conf, 'settings', 'canonical')) &&0): mpre("Канонический адрес не задан") ?>
+<? elseif(($uri = get($canonical = get($conf, 'settings', 'canonical'), 'name') ? $canonical['name'] : $_SERVER['REQUEST_URI']) && (!$get = mpgt($uri)) &0): mpre("Параметры адреса не определены <b>{$uri}</b>") ?>
+<? elseif(!$modpath = first(array_keys(get($get, 'm')))): mpre("Ошибка расчета директории модуля"); ?>
+<? elseif(!$filename = (first(get($get, 'm'))) ?: "index"): mpre("Ошибка рачета имени файла"); ?>
+<? elseif(!$alias = "{$modpath}:{$filename}" . (($keys = array_keys(array_diff_key($get, array_flip(["m", "id"])))) ? "/". implode("/", $keys) : "")): mpre("Алиас сфоримрован ошибочно") ?>
+<? elseif((!$seo_cat = rb("seo-cat", "id", get($canonical, 'cat_id'))) && (!$seo_cat = rb("seo-cat", "alias", (empty($alias) ? false : "[{$alias}]")))): mpre("Категория не найдена `{$alias}`") ?>
+<? elseif((!$name = (is_string($canonical) ? $canonical : get($canonical, 'name'))) &&0): mpre("Ошибка формирования имени страницы") ?>
+<? else:// mpre($seo_cat) ?>
+		<div class="themes_header_seo_blocks" style="z-index:9999; border:1px solid #eee; border-radius:7px; position:fixed; background-color:rgba(255,255,255,0.7); color:black; padding:0 5px; left:10px; top:10px; width:auto;">
+			<div class="table">
+				<div>
+					<span><a href="/admin" title="Перейти в админраздел"><img src="/themes/theme:zhiraf/null/i/logo.png"></a></span>
+					<span>
+						<div title="Переход к правилу генерации страницы">
+							<a href="/seo:admin/r:seo-cat?&where[id]=<?=get($seo_cat, 'id')?>"><?=get($seo_cat, 'name')?></a>
+						</div>
+						<div title="Переход к метаинформации страницы">
+							<? if(!$index_themes_id = get($canonical, 'index_themes_id')):// mpre("Не найден номер записи адресации"); ?>
+								<span class="add" title="Динамический адрес"><?=$name?></span>
+							<? else: ?>
+								<a href="/seo:admin/r:seo-index_themes?&where[id]=<?=get($canonical, 'index_themes_id')?>"><?=$name?></a>
+							<? endif; ?>
+						</div>
+					</span>
+				</div>
+			</div>
+			<style>
+				.pre {/*position:absolute;*/ z-index:999; background-color:white; border-radius:10px; padding:5px; opacity:0.8; border:3px double red; font-size:12px; color:gray;}
+				.pre legend { color:black; font-size:100%; /*top: 13px;*/ position: relative; }
+				.pre a.del { float:right; position:absolute; top:13px; right:7px; }
+			</style>
+			<script>
+				$(function(){// Ссылка на редактирование заголовка страницы
+/*					if("object" == typeof(index = $.parseJSON(canonical = '<?=strtr(json_encode($canonical, JSON_UNESCAPED_UNICODE), ["\\\""=>""])?>'))){// console.log("index", index);
+						var themes_index = $.parseJSON('<?=strtr(json_encode($themes_index, JSON_UNESCAPED_UNICODE), ["\\\""=>""])?>');
+						$(".themes_header_seo_blocks").on("click", ".admin_content", function(e){
+							window.open("/seo:admin/r:seo-index_themes?&where[location_id]="+index.id+"&where[themes_index]="+themes_index.id);
+						}).find(".admin_content").css("cursor", "pointer");
+					}else{// console.log("canonical:", canonical);*/
+						$(".themes_header_seo_blocks").on("ajax", function(e, modpath, table, get, post, complete, rollback){
+							var href = "/"+modpath+":ajax/class:"+table; console.log("get:", get);
+							$.each(get, function(key, val){ href += (key == "uri" ? "" : "/"+ key+ ":"+ val); });
+							if(typeof(get["uri"]) != "undefined"){
+									href = href + "/null/name:"+get["uri"];
+							} console.log("href:", href);
+
+							$.post(href, post, function(data){ if(typeof(complete) == "function"){
+								complete.call(e.currentTarget, data);
+							}}, "json").fail(function(error) {if(typeof(rollback) == "function"){
+									rollback.call(e.currentTarget, error);
+							} alert(error.responseText) });
+						}).on("click", ".add", function(e){
+							if(!(href = prompt("Адрес страницы"))){ // alert("Отмена действия");
+							}else if(href.substring(0, 1) != "/"){ alert("Адрес должен начинаться с правого слеша «/»");
+							}else{ console.log("Выполнение");
+								var title = "";
+								if(h1 = $("h1").get(0)){
+									var title = h1.innerHTML;
+								}else{ console.log("Заголовок для сайта не найден"); }
+
+								$(e.delegateTarget).trigger("ajax", ["seo", "index", {"uri":href}, {}, function(seo_index){
+									console.log("seo_index:", seo_index);
+									$(e.delegateTarget).trigger("ajax", ["seo", "location", {"uri":document.location.pathname}, {}, function(seo_location){
+										console.log("seo_location:", seo_location);
+										$(e.delegateTarget).trigger("ajax", ["seo", "index_themes", {themes_index:<?=get($conf, 'themes', 'index', 'id')?>, index_id:seo_index.id, location_id:seo_location.id}, {title:title}, function(index_themes){
+											console.log("index_themes:", index_themes);
+											$(e.delegateTarget).trigger("ajax", ["seo", "location_themes", {themes_index:<?=get($conf, 'themes', 'index', 'id')?>, index_id:seo_index.id, location_id:seo_location.id}, {}, function(location_themes){
+												console.log("location_themes:", location_themes);
+												document.location.href = href;
+											}])
+										}])
+									}])
+								}])
+							}
+						})//.find(".admin_content").css("cursor", "pointer").text(canonical != "false" ? canonical : "Задать адрес");
+					//}
+				}).one("init", function(e){ // Перетаскивание админских элементов
+					$.getScript("//code.jquery.com/ui/1.11.4/jquery-ui.js", function(){
+						var img = $("<img>").attr("src", "/img/del.png");
+						$("<a>").html(img).addClass("del").appendTo("fieldset.pre");
+						$("fieldset.pre").on("click", "a.del", function(e){
+							$(e.delegateTarget).remove();
+						})
+						setTimeout(function(){ // Ожидаем загрузки всех элементов на страницу
+							$("fieldset.pre").draggable({handle:"legend"}).css("position", "absolute").find("legend").css("cursor", "pointer");
+						}, 1000);
+					})
+				})//.ready(function(e){ $(script).parent().trigger("init"); })
+			</script>
+	</div>
+<? endif; ?>
+
 <? if(!get($conf, 'settings', 'themes_params')):// mpre("Параметры редактора тем не заданы") ?>
 <? elseif(!$themes_params = rb("themes-params", "name", $w = "[Google Tag Manager]")):// mpre("Параметр не найден {$w}") ?>
 <? elseif(!$themes_params_index = rb("themes-params_index", "params_id", "index_id", $themes_params['id'], $conf['themes']['index']['id'])):// mpre("Значение хоста не найдено") ?>
@@ -49,7 +143,7 @@
 	<!-- {/literal} -->
 <? endif; ?>
 
-<? if(!$themes_index = get($conf, 'themes', 'index')): mpre("Ошибка расчета текущего хоста") ?>
+<? if(!$themes_index = get($conf, 'themes', 'index')):// mpre("Ошибка расчета текущего хоста") ?>
 <? elseif(!array_key_exists('callback', $themes_index)):// mpre("Параметр обратного вызова не задан в свойствах сайта") ?>
 <? elseif(!$callback = get($themes_index, 'callback')): mpre("Форма обратной связи eyenewton.ru <a href='/themes:admin/r:themes-index?&where[id]={$themes_index['id']}'>не задана</a>") ?>
 <? else: ?>
@@ -161,95 +255,6 @@
 			<? endforeach; ?>
 		<? endif; ?>
 	<? endforeach; ?>
-<? endif; ?>
-
-<? if(!array_search("Администратор", $conf['user']['gid'])): mpre("Раздел предназначен только администраторам") ?>
-<? elseif(!($themes_index = get($conf, 'themes', 'index')) &&0):// mpre("Хост сайта не найден") ?>
-<? elseif(($canonical = get($conf, 'settings', 'canonical')) &&0): mpre("Канонический адрес не задан") ?>
-<? elseif(($uri = get($canonical = get($conf, 'settings', 'canonical'), 'name') ? $canonical['name'] : $_SERVER['REQUEST_URI']) && (!$get = mpgt($uri)) &0): mpre("Параметры адреса не определены <b>{$uri}</b>") ?>
-<? elseif(!$alias = first(array_keys((array)get($get, 'm'))). ":". first(get($get, 'm')). (($keys = array_keys(array_diff_key($get, array_flip(["m", "id"])))) ? "/". implode("/", $keys) : "")): mpre("Алиас сфоримрован ошибочно") ?>
-<? elseif((!$seo_cat = rb("seo-cat", "id", get($canonical, 'cat_id'))) && (!$seo_cat = rb("seo-cat", "alias", (empty($alias) ? false : "[{$alias}]"))) &0): mpre("Категория не найдена") ?>
-<? else:// mpre($seo_cat) ?>
-		<div class="themes_header_seo_blocks" style="z-index:9999; border:1px solid #eee; border-radius:7px; position:fixed; background-color:rgba(255,255,255,0.7); color:black; padding:0 5px; left:10px; top:10px; width:auto;">
-			<div class="table">
-				<div>
-					<span><a href="/admin" title="Перейти в админраздел"><img src="/themes/theme:zhiraf/null/i/logo.png"></a></span>
-					<span>
-						<div title="Категория ссылки">
-							<? if($name = get($seo_cat, 'name')): ?>
-								<a href="/seo:admin/r:seo-cat?&where[id]=<?=get($seo_cat, 'id')?>"><?=$name?></a>
-							<? else: ?>Категория не задана<? endif; ?>
-						</div>
-						<div class="admin_content" title="Информация о странице"><?=get($canonical, 'name')?></div>
-					</span>
-				</div>
-			</div>
-			<style>
-				.pre {/*position:absolute;*/ z-index:999; background-color:white; border-radius:10px; padding:5px; opacity:0.8; border:3px double red; font-size:12px; color:gray;}
-				.pre legend { color:black; font-size:100%; /*top: 13px;*/ position: relative; }
-				.pre a.del { float:right; position:absolute; top:13px; right:7px; }
-			</style>
-			<script>
-				$(function(){// Ссылка на редактирование заголовка страницы
-					if("object" == typeof(index = $.parseJSON(canonical = '<?=strtr(json_encode($canonical, JSON_UNESCAPED_UNICODE), ["\\\""=>""])?>'))){// console.log("index", index);
-						var themes_index = $.parseJSON('<?=strtr(json_encode($themes_index, JSON_UNESCAPED_UNICODE), ["\\\""=>""])?>');
-						$(".themes_header_seo_blocks").on("click", ".admin_content", function(e){
-							window.open("/seo:admin/r:seo-index_themes?&where[location_id]="+index.id+"&where[themes_index]="+themes_index.id);
-						}).find(".admin_content").css("cursor", "pointer");
-					}else{// console.log("canonical:", canonical);
-						$(".themes_header_seo_blocks").on("ajax", function(e, modpath, table, get, post, complete, rollback){
-							var href = "/"+modpath+":ajax/class:"+table; console.log("get:", get);
-							$.each(get, function(key, val){ href += (key == "uri" ? "" : "/"+ key+ ":"+ val); });
-							if(typeof(get["uri"]) != "undefined"){
-									href = href + "/null/name:"+get["uri"];
-							} console.log("href:", href);
-
-							$.post(href, post, function(data){ if(typeof(complete) == "function"){
-								complete.call(e.currentTarget, data);
-							}}, "json").fail(function(error) {if(typeof(rollback) == "function"){
-									rollback.call(e.currentTarget, error);
-							} alert(error.responseText) });
-						}).on("click", ".admin_content", function(e){
-							if(!(href = prompt("Адрес страницы"))){ // alert("Отмена действия");
-							}else if(href.substring(0, 1) != "/"){ alert("Адрес должен начинаться с правого слеша «/»");
-							}else{ console.log("Выполнение");
-								var title = "";
-								if(h1 = $("h1").get(0)){
-									var title = h1.innerHTML;
-								}else{ console.log("Заголовок для сайта не найден"); }
-
-								$(e.delegateTarget).trigger("ajax", ["seo", "index", {"uri":href}, {}, function(seo_index){
-									console.log("seo_index:", seo_index);
-									$(e.delegateTarget).trigger("ajax", ["seo", "location", {"uri":document.location.pathname}, {}, function(seo_location){
-										console.log("seo_location:", seo_location);
-										$(e.delegateTarget).trigger("ajax", ["seo", "index_themes", {themes_index:<?=get($conf, 'themes', 'index', 'id')?>, index_id:seo_index.id, location_id:seo_location.id}, {title:title}, function(index_themes){
-											console.log("index_themes:", index_themes);
-											$(e.delegateTarget).trigger("ajax", ["seo", "location_themes", {themes_index:<?=get($conf, 'themes', 'index', 'id')?>, index_id:seo_index.id, location_id:seo_location.id}, {}, function(location_themes){
-												console.log("location_themes:", location_themes);
-												document.location.href = href;
-											}])
-										}])
-									}])
-								}])
-							}
-						}).find(".admin_content").css("cursor", "pointer").text(canonical != "false" ? canonical : "Задать адрес");
-					}
-				})/*.on("click", "fieldset.pre", function(e){
-					console.log(e.type, "pre");
-				})*/.one("init", function(e){ // Перетаскивание админских элементов
-					$.getScript("//code.jquery.com/ui/1.11.4/jquery-ui.js", function(){
-						var img = $("<img>").attr("src", "/img/del.png");
-						$("<a>").html(img).addClass("del").appendTo("fieldset.pre");
-						$("fieldset.pre").on("click", "a.del", function(e){
-							$(e.delegateTarget).remove();
-						})
-						setTimeout(function(){ // Ожидаем загрузки всех элементов на страницу
-							$("fieldset.pre").draggable({handle:"legend"}).css("position", "absolute").find("legend").css("cursor", "pointer");
-						}, 1000);
-					})
-				})//.ready(function(e){ $(script).parent().trigger("init"); })
-			</script>
-	</div>
 <? endif; ?>
 
 <? if(get($conf, 'settings', 'themes_orders')): ?>
