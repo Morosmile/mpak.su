@@ -1567,30 +1567,26 @@ function mpmail(){
 }
 function mpfid($tn, $fn, $id = 0, $prefix = null, $exts = array('image/png'=>'.png', 'image/pjpeg'=>'.jpg', 'image/jpeg'=>'.jpg', 'image/gif'=>'.gif', 'image/bmp'=>'.bmp')){
 	global $conf;	
-	$file = get(normalize_files_array(),$fn,intval($prefix));
-	$folder = preg_match_all("#^image/\w+$#iu",$file['type']) ? 'images' : 'files';
-	// mpre($file);
-	if($file['error'] === 0){
-		if(($ext = get($exts, $file['type'] )) || get($exts, '*')){
-			if(!strlen($ext)){
-				$ext = '.'. last(explode('.', $file['name']));
-			} $f = "{$tn}_{$fn}_". (int)($img_id = mpfdk($tn, $w = array("id"=>$id), $w += array("time"=>time(), "uid"=>$conf['user']['uid']), $w)). $ext;
-			if(($ufn = mpopendir("include/{$folder}")) && move_uploaded_file($file['tmp_name'], "$ufn/$f")){
-				/*if($img_id != $id)*/ mpqw($sql = "UPDATE {$tn} SET `". mpquot($fn). "`=\"". mpquot($return = "{$folder}/{$f}"). "\" WHERE id=". (int)$img_id);
+	
+	
+	if(!$file = get(normalize_files_array(),$fn,intval($prefix))){ mpre("Ошибка получения параметров файла");
+	}elseif(!$folder = preg_match_all("#^image/\w+$#iu",$file['type']) ? 'images' : 'files'){ mpre("Ошибка получения имени поля таблицы");
+	}elseif($error = $file['error']){ mpre("Код ошибки `{$error}` поле `{$folder}`");
+	}elseif((!$ext = get($exts, $file['type'] )) && !get($exts, '*')){ mpre("Запрещенный для загрузки тип файла `{$file['type']}`",$exts);
+	}elseif(!strlen($ext) && !($ext = '.'. last(explode('.', $file['name'])))){ mpre("Ошибка получения расшерения файла");
+	}elseif(!$img_id = mpfdk($tn, $w = array("id"=>$id), $w += array("time"=>time(), "uid"=>$conf['user']['uid']), $w)){ mpre("Ошибка загрузки файла в директорию изображений");
+	}elseif(!$file_name = "{$tn}_{$fn}_". (int)($img_id). $ext){ mpre("Ошибка получения имени файла в директории");
+	}elseif(!$ufn = mpopendir($f = "include/{$folder}")){ exit(!mpre("Не найдена директория с файлами `{$f}`"));
+	}elseif(!move_uploaded_file($t = $file['tmp_name'], $d = "$ufn/$file_name")){ mpre("Ошибка перемещения файлов из `{$t}` в директорию изображений `{$d}`");
+	}else{ //mpre($ufn);
+			if(true){
+				/*if($img_id != $id)*/ mpqw($sql = "UPDATE {$tn} SET `". mpquot($fn). "`=\"". mpquot($return = "{$folder}/{$file_name}"). "\" WHERE id=". (int)$img_id);
 				mpevent("Загрузка файла", $_SERVER['REQUEST_URI'], $conf['user']['uid'], $file);
 			}else{
 				if($img_id != $id){
 					mpqw("DELETE FROM {$tn} WHERE id=". (int)$img_id);
 				} mpevent("Ошибка копирования файла", $_SERVER['REQUEST_URI'], $conf['user']['uid'], $file);
 			} return $img_id;
-		}else{
-			pre("Запрещенное для загрузки расширение", $ext);
-			mpevent("Ошибка расширения загружаемого файла", $_SERVER['REQUEST_URI'], $conf['user']['uid'], $file);
-			return 0;
-		}
-	}elseif(empty($file)){
-		echo "file error {$file['error']}";
-		mpevent("Ошибка загрузки файла", $_SERVER['REQUEST_URI'], $conf['user']['uid'], $file);
 	} return null;
 }
 function mphid($tn, $fn, $id = 0, $href, $exts = array('image/png'=>'.png', 'image/pjpeg'=>'.jpeg', 'image/jpeg'=>'.jpg', 'image/gif'=>'.gif', 'image/bmp'=>'.bmp')){
