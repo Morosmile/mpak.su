@@ -16,7 +16,7 @@
 <? elseif(!($themes_index = get($conf, 'themes', 'index')) &&0):// mpre("Хост сайта не найден") ?>
 <? elseif(($canonical = get($conf, 'settings', 'canonical')) &&0): mpre("Канонический адрес не задан") ?>
 <? elseif(($uri = get($canonical = get($conf, 'settings', 'canonical'), 'name') ? $canonical['name'] : $_SERVER['REQUEST_URI']) && (!$get = mpgt($uri)) &0): mpre("Параметры адреса не определены <b>{$uri}</b>") ?>
-<? elseif(!$modpath = first(array_keys(get($get, 'm')))): mpre("Ошибка расчета директории модуля"); ?>
+<? elseif(!$modpath = first(array_keys(get($_GET, 'm')))): mpre("Ошибка расчета директории модуля"); ?>
 <? elseif(!$filename = (first(get($get, 'm'))) ?: "index"): mpre("Ошибка рачета имени файла"); ?>
 <? elseif(!$alias = "{$modpath}:{$filename}" . (($keys = array_keys(array_diff_key($get, array_flip(["m", "id"])))) ? "/". implode("/", $keys) : "")): mpre("Алиас сфоримрован ошибочно") ?>
 <? elseif((!$seo_cat = rb("seo-cat", "id", get($canonical, 'cat_id'))) && (!$seo_cat = rb("seo-cat", "alias", (empty($alias) ? false : "[{$alias}]")))): mpre("Категория не найдена `{$alias}`") ?>
