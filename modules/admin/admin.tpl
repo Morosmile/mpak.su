@@ -632,7 +632,7 @@
 							<? endforeach; ?>
 						<? endif; ?>
 						<? if(empty($tpl['title'])): ?>
-							<div>
+							<div style="height:200px;">
 								<? foreach(array_merge((array_key_exists('title', $tpl) ? array_intersect_key($tpl['fields'], array_flip($tpl['title'])) : $tpl['fields']), (get($tpl, 'counter') ?: array()), get($tpl, 'ecounter') ?: array()) as $name=>$field): ?>
 									<span>
 										<? if(substr($name, 0, 1) == "_"): ?>
