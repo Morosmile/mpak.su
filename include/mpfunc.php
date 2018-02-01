@@ -1673,12 +1673,15 @@ function mpager($count, $null=null, $cur=null, $url=null){
 			$url = $u = urldecode($REQUEST_URI);
 		}else{
 		} $url = seo($url);
+		$url_end = strstr($REQUEST_URI, '?'); # Сохраняем значения GET запроса после знака '?'
 	} if($null){
 		$url = str_replace($u, $u. (strpos($url, '&') || strpos($url, '?') ? "&null" : "/null"), $url);
 	}else if($null === false){
 		$url = strtr($url, array("/null"=>"", "&null"=>"", "?null"=>""));
 	} if(is_array($url)){
 		$url = get($url, 'name');
+	} elseif(!empty($url_end)){
+		$url = (stripos($url,"?") ? $url : $url.$url_end);
 	}
 	if(2 > $count = ceil($count)) return;
 	$return = "<script>$(function(){ $(\".pager\").find(\"a[href='". urldecode($REQUEST_URI). "']\").addClass(\"active\").css(\"font-weight\", \"bold\"); })</script>";
