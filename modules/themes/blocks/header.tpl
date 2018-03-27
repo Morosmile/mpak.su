@@ -172,6 +172,9 @@
 <? if($verification = get($themes_index, 'google_verification')): # Проверка вебмастера гугл ?> 
 	<meta name="google-site-verification" content="<?=$verification?>" />
 <? endif; ?>
+<? if($verification = get($themes_index, 'mailru_verification')): # Проверка вебмастера мэилру ?> 
+	<meta name='wmail-verification' content='<?=$verification?>' />
+<? endif; ?>
 
 <? if($analytics = get($conf, 'themes', 'index', 'analytics')): ?>
 	<!-- google-analytics -->
