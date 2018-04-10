@@ -269,7 +269,7 @@
 		(function($, script){
 			$(script).parent().one("init", function(e){
 				$(document).data("themes_scrolltop", 1);
-				$("<button"+">").addClass("themes_scrolltop").text("<?=$themes_scrolltop?>").css({"position":"fixed", "top":"80%", "right":"3%", "display":"none"}).appendTo("body");
+				$("<button"+">").addClass("themes_scrolltop").text("<?=$themes_scrolltop?>").css({"position":"fixed", "top":"80%", "left":"3%", "display":"none"}).appendTo("body");
 				$(document).on("click", "button.themes_scrolltop", function(e){
 					$(e.delegateTarget).scrollTop(0);
 				}).on("scroll", function(e){
